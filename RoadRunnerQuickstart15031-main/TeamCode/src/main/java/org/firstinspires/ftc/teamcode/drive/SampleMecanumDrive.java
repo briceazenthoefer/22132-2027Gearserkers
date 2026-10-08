@@ -19,7 +19,6 @@ import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryAcceleration
 import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -54,6 +53,7 @@ import static org.firstinspires.ftc.teamcode.drive.DriveConstants.kV;
  * Simple mecanum drive hardware implementation for REV hardware.
  */
 @Config
+@SuppressWarnings("unused")
 public class SampleMecanumDrive extends MecanumDrive {
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(0, 0, 0);
     public static PIDCoefficients HEADING_PID = new PIDCoefficients(0, 0, 0);
@@ -64,21 +64,21 @@ public class SampleMecanumDrive extends MecanumDrive {
     public static double VY_WEIGHT = 1;
     public static double OMEGA_WEIGHT = 1;
 
-    private TrajectorySequenceRunner trajectorySequenceRunner;
+    private final TrajectorySequenceRunner trajectorySequenceRunner;
 
     private static final TrajectoryVelocityConstraint VEL_CONSTRAINT = getVelocityConstraint(MAX_VEL, MAX_ANG_VEL, TRACK_WIDTH);
     private static final TrajectoryAccelerationConstraint ACCEL_CONSTRAINT = getAccelerationConstraint(MAX_ACCEL);
 
-    private TrajectoryFollower follower;
+    private final TrajectoryFollower follower;
 
-    private DcMotorEx leftFront, leftRear, rightRear, rightFront;
-    private List<DcMotorEx> motors;
+    private final DcMotorEx leftFront, leftRear, rightRear, rightFront;
+    private final List<DcMotorEx> motors;
 
-    private IMU imu;
-    private VoltageSensor batteryVoltageSensor;
+    private final IMU imu;
+    private final VoltageSensor batteryVoltageSensor;
 
-    private List<Integer> lastEncPositions = new ArrayList<>();
-    private List<Integer> lastEncVels = new ArrayList<>();
+    private final List<Integer> lastEncPositions = new ArrayList<>();
+    private final List<Integer> lastEncVels = new ArrayList<>();
 
     public SampleMecanumDrive(HardwareMap hardwareMap) {
         super(kV, kA, kStatic, TRACK_WIDTH, TRACK_WIDTH, LATERAL_MULTIPLIER);
@@ -94,7 +94,7 @@ public class SampleMecanumDrive extends MecanumDrive {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
 
-        // TODO: adjust the names of the following hardware devices to match your configuration
+        // Adjust the names of the following hardware devices to match your configuration
         imu = hardwareMap.get(IMU.class, "imu");
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
                 DriveConstants.LOGO_FACING_DIR, DriveConstants.USB_FACING_DIR));
@@ -123,12 +123,12 @@ public class SampleMecanumDrive extends MecanumDrive {
             setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, MOTOR_VELO_PID);
         }
 
-        // TODO: reverse any motors using DcMotor.setDirection()
+        // Reverse any motors using DcMotor.setDirection() if needed
 
         List<Integer> lastTrackingEncPositions = new ArrayList<>();
         List<Integer> lastTrackingEncVels = new ArrayList<>();
 
-        // TODO: if desired, use setLocalizer() to change the localization method
+        // If desired, use setLocalizer() to change the localization method
         // setLocalizer(new StandardTrackingWheelLocalizer(hardwareMap, lastTrackingEncPositions, lastTrackingEncVels));
 
         trajectorySequenceRunner = new TrajectorySequenceRunner(
@@ -203,8 +203,9 @@ public class SampleMecanumDrive extends MecanumDrive {
     }
 
     public void waitForIdle() {
-        while (!Thread.currentThread().isInterrupted() && isBusy())
+        while (!Thread.currentThread().isInterrupted() && isBusy()) {
             update();
+        }
     }
 
     public boolean isBusy() {
@@ -235,7 +236,7 @@ public class SampleMecanumDrive extends MecanumDrive {
     }
 
     public void setWeightedDrivePower(Pose2d drivePower) {
-        Pose2d vel = drivePower;
+        Pose2d vel;
 
         if (Math.abs(drivePower.getX()) + Math.abs(drivePower.getY())
                 + Math.abs(drivePower.getHeading()) > 1) {
@@ -249,6 +250,8 @@ public class SampleMecanumDrive extends MecanumDrive {
                     VY_WEIGHT * drivePower.getY(),
                     OMEGA_WEIGHT * drivePower.getHeading()
             ).div(denom);
+        } else {
+            vel = drivePower;
         }
 
         setDrivePower(vel);

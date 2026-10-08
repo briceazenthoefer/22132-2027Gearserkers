@@ -33,6 +33,7 @@ import java.util.List;
  *    \--------------/
  *
  */
+@SuppressWarnings("unused")
 public class TwoWheelTrackingLocalizer extends TwoTrackingWheelLocalizer {
     public static double TICKS_PER_REV = 0;
     public static double WHEEL_RADIUS = 2; // in
@@ -47,9 +48,9 @@ public class TwoWheelTrackingLocalizer extends TwoTrackingWheelLocalizer {
     // Parallel/Perpendicular to the forward axis
     // Parallel wheel is parallel to the forward axis
     // Perpendicular is perpendicular to the forward axis
-    private Encoder parallelEncoder, perpendicularEncoder;
+    private final Encoder parallelEncoder, perpendicularEncoder;
 
-    private SampleMecanumDrive drive;
+    private final SampleMecanumDrive drive;
 
     public TwoWheelTrackingLocalizer(HardwareMap hardwareMap, SampleMecanumDrive drive) {
         super(Arrays.asList(
@@ -62,7 +63,7 @@ public class TwoWheelTrackingLocalizer extends TwoTrackingWheelLocalizer {
         parallelEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "parallelEncoder"));
         perpendicularEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "perpendicularEncoder"));
 
-        // TODO: reverse any encoders using Encoder.setDirection(Encoder.Direction.REVERSE)
+        // Reverse any encoders using Encoder.setDirection(Encoder.Direction.REVERSE) if needed
     }
 
     public static double encoderTicksToInches(double ticks) {
@@ -91,9 +92,7 @@ public class TwoWheelTrackingLocalizer extends TwoTrackingWheelLocalizer {
     @NonNull
     @Override
     public List<Double> getWheelVelocities() {
-        // TODO: If your encoder velocity can exceed 32767 counts / second (such as the REV Through Bore and other
-        //  competing magnetic encoders), change Encoder.getRawVelocity() to Encoder.getCorrectedVelocity() to enable a
-        //  compensation method
+        // Compensation method can be used by changing Encoder.getRawVelocity() to Encoder.getCorrectedVelocity() if needed.
 
         return Arrays.asList(
                 encoderTicksToInches(parallelEncoder.getRawVelocity()),
