@@ -19,6 +19,7 @@ import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.firstinspires.ftc.teamcode.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.drive.SampleTankDrive;
+import org.firstinspires.ftc.teamcode.drive.StandardTrackingWheelLocalizer;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,6 +28,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -39,6 +41,7 @@ public final class LogFiles {
 
     public static LogFile log = new LogFile("uninitialized");
 
+    @SuppressWarnings("unused")
     public static class LogFile {
         public String version = "quickstart1 v2";
 
@@ -148,17 +151,17 @@ public final class LogFiles {
             log.trackingEncVels.add(new ArrayList<>());
         }
 
-        for (int i = 0; i < lastDriveEncPositions.size(); i++) {
-            log.driveEncPositions.get(i).add(lastDriveEncPositions.get(i));
+        for (int drivePosIdx = 0; drivePosIdx < lastDriveEncPositions.size(); drivePosIdx++) {
+            log.driveEncPositions.get(drivePosIdx).add(lastDriveEncPositions.get(drivePosIdx));
         }
-        for (int i = 0; i < lastDriveEncVels.size(); i++) {
-            log.driveEncVels.get(i).add(lastDriveEncVels.get(i));
+        for (int driveVelIdx = 0; driveVelIdx < lastDriveEncVels.size(); driveVelIdx++) {
+            log.driveEncVels.get(driveVelIdx).add(lastDriveEncVels.get(driveVelIdx));
         }
-        for (int i = 0; i < lastTrackingEncPositions.size(); i++) {
-            log.trackingEncPositions.get(i).add(lastTrackingEncPositions.get(i));
+        for (int trackingPosIdx = 0; trackingPosIdx < lastTrackingEncPositions.size(); trackingPosIdx++) {
+            log.trackingEncPositions.get(trackingPosIdx).add(lastTrackingEncPositions.get(trackingPosIdx));
         }
-        for (int i = 0; i < lastTrackingEncVels.size(); i++) {
-            log.trackingEncVels.get(i).add(lastTrackingEncVels.get(i));
+        for (int trackingVelIdx = 0; trackingVelIdx < lastTrackingEncVels.size(); trackingVelIdx++) {
+            log.trackingEncVels.get(trackingVelIdx).add(lastTrackingEncVels.get(trackingVelIdx));
         }
     }
 
@@ -175,19 +178,19 @@ public final class LogFiles {
 
             // clean up old files
             File[] fs = Objects.requireNonNull(ROOT.listFiles());
-            Arrays.sort(fs, (a, b) -> Long.compare(a.lastModified(), b.lastModified()));
+            Arrays.sort(fs, Comparator.comparingLong(File::lastModified));
             long totalSizeBytes = 0;
             for (File f : fs) {
                 totalSizeBytes += f.length();
             }
 
-            int i = 0;
-            while (i < fs.length && totalSizeBytes >= 32 * 1000 * 1000) {
-                totalSizeBytes -= fs[i].length();
-                if (!fs[i].delete()) {
-                    RobotLog.setGlobalErrorMsg("Unable to delete file " + fs[i].getAbsolutePath());
+            int fileIdx = 0;
+            while (fileIdx < fs.length && totalSizeBytes >= 32 * 1000 * 1000) {
+                totalSizeBytes -= fs[fileIdx].length();
+                if (!fs[fileIdx].delete()) {
+                    RobotLog.setGlobalErrorMsg("Unable to delete file " + fs[fileIdx].getAbsolutePath());
                 }
-                ++i;
+                ++fileIdx;
             }
         }
 
@@ -217,6 +220,7 @@ public final class LogFiles {
     };
 
     @WebHandlerRegistrar
+    @SuppressWarnings("unused")
     public static void registerRoutes(Context context, WebHandlerManager manager) {
         //noinspection ResultOfMethodCallIgnored
         ROOT.mkdirs();
@@ -231,7 +235,7 @@ public final class LogFiles {
             final StringBuilder sb = new StringBuilder();
             sb.append("<!doctype html><html><head><title>Logs</title></head><body><ul>");
             File[] fs = Objects.requireNonNull(ROOT.listFiles());
-            Arrays.sort(fs, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
+            Arrays.sort(fs, Comparator.comparingLong(File::lastModified).reversed());
             for (File f : fs) {
                 sb.append("<li><a href=\"/logs/download?file=");
                 sb.append(f.getName());
@@ -254,7 +258,7 @@ public final class LogFiles {
             }
 
             final String[] parts = pairs[0].split("=");
-            if (!parts[0].equals("file")) {
+            if (!Objects.equals(parts[0], "file")) {
                 return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
                         NanoHTTPD.MIME_PLAINTEXT, "expected file query parameter, got " + parts[0]);
             }
@@ -265,8 +269,14 @@ public final class LogFiles {
                         NanoHTTPD.MIME_PLAINTEXT, "file " + f + " doesn't exist");
             }
 
-            return NanoHTTPD.newChunkedResponse(NanoHTTPD.Response.Status.OK,
-                    "application/json", new FileInputStream(f));
+            try {
+                //noinspection IOStreamConstructor
+                return NanoHTTPD.newChunkedResponse(NanoHTTPD.Response.Status.OK,
+                        "application/json", new FileInputStream(f));
+            } catch (IOException e) {
+                return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.INTERNAL_ERROR,
+                        NanoHTTPD.MIME_PLAINTEXT, "failed to read file: " + e.getMessage());
+            }
         });
     }
 }
