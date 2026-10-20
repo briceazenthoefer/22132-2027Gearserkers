@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 @TeleOp (name = "Basic Drive", group= "Drive")
 public class BasicDrive extends LinearOpMode {
@@ -37,6 +38,9 @@ public class BasicDrive extends LinearOpMode {
             double backLeftPower = (y - x + turn) / denominator;
             double frontRightPower = (y - x - turn) / denominator;
             double backRightPower =  (y + x - turn) / denominator;
+
+            frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+            backRight.setDirection(DcMotorSimple.Direction.REVERSE);
 
             frontLeft.setPower(frontLeftPower);
             backLeft.setPower(backLeftPower);
